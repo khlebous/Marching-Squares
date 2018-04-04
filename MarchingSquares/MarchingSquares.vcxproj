@@ -139,6 +139,7 @@
     <ClInclude Include="Includes\imgui\stb_textedit.h" />
     <ClInclude Include="Includes\imgui\stb_truetype.h" />
     <ClInclude Include="Line.h" />
+    <ClInclude Include="MarchingSquares.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="Square.h" />
