@@ -138,7 +138,10 @@
     <ClInclude Include="Includes\imgui\stb_rect_pack.h" />
     <ClInclude Include="Includes\imgui\stb_textedit.h" />
     <ClInclude Include="Includes\imgui\stb_truetype.h" />
+    <ClInclude Include="Line.h" />
+    <ClInclude Include="Point.h" />
     <ClInclude Include="shader.h" />
+    <ClInclude Include="Square.h" />
     <ClInclude Include="stb_image.h" />
   </ItemGroup>
   <ItemGroup>
