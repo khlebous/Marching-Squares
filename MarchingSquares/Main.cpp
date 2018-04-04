@@ -112,7 +112,7 @@ int main(int, char**)
 
 	stbi_set_flip_vertically_on_load(true);
 
-	unsigned char *data = stbi_load("Lenna.png", &SCR_WIDTH, &SCR_HEIGHT, &nrChannels, 0);
+	unsigned char *data = stbi_load("3.png", &SCR_WIDTH, &SCR_HEIGHT, &nrChannels, 0);
 	glfwSetWindowSize(window, SCR_WIDTH, SCR_HEIGHT);
 	if (data)
 	{
@@ -166,15 +166,13 @@ int main(int, char**)
 				LoadNewTexture(data, new_image_path);
 			}
 			ImGui::Text("---------------");
-			if(ImGui::InputInt("step  ", &step))
+			if (ImGui::SliderInt("step", &step, 5, min(SCR_WIDTH, SCR_HEIGHT)))
 				lines = MarchingSquares(data);
-
+			ImGui::Text("---------------");
+			if (ImGui::SliderInt("threshhold", &threshhold, 0, 255))
+				lines = MarchingSquares(data);
 			ImGui::Text("---------------");
 			if (ImGui::Button("Marching Squares"))
-			{
-				lines = MarchingSquares(data);
-			}
-			if (ImGui::InputInt("threshhold ", &threshhold))
 			{
 				lines = MarchingSquares(data);
 			}
@@ -214,7 +212,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 void LoadNewTexture(unsigned char *data, const char* src)
 {
-	
+
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	stbi_set_flip_vertically_on_load(true);
@@ -300,9 +298,9 @@ vector<Line> GetLines(Square**  squares)
 	int w = (SCR_WIDTH - 1) / step + 1;
 	int h = (SCR_HEIGHT - 1) / step + 1;
 
-	for (int i = 0; i < h -1; i++)
+	for (int i = 0; i < h - 1; i++)
 	{
-		for (size_t j = 0; j < w -1; j++)
+		for (size_t j = 0; j < w - 1; j++)
 		{
 			Square* square = &squares[i][j];
 			for (Line &line : (*square).GetLines())
