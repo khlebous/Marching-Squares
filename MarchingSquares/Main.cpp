@@ -14,13 +14,16 @@
 #include <stdio.h>
 #include <algorithm>
 #include "GraphicsLibrary.h"
+#include "Point.h"
+#include "Square.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
 
-void LoadNewTexture(const char* src);
-
+using namespace std;
+void LoadNewTexture(unsigned char *data, const char* src);
+vector<Line> MarchingSquares(unsigned char * data);
 
 unsigned int texture;
 char new_image_path[30] = "Lenna.png";
@@ -34,21 +37,20 @@ static void error_callback(int error, const char* description)
 }
 
 int nrChannels;
-int i0 = 1;
-int i1 = 1;
-
-
-using namespace std;
+int step = 20;
+int threshhold = 120;
+vector<Line> lines;
 
 int main(int, char**)
 {
+
 #pragma region SetupWindow
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
 		return 1;
 	glfwInit();
 
-	window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Image Processing", NULL, NULL);
+	window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Marching Cubes", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -109,7 +111,8 @@ int main(int, char**)
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load("Lenna.png", &SCR_WIDTH, &SCR_HEIGHT, &nrChannels, 0);
+
+	unsigned char *data = stbi_load("3.png", &SCR_WIDTH, &SCR_HEIGHT, &nrChannels, 0);
 	glfwSetWindowSize(window, SCR_WIDTH, SCR_HEIGHT);
 	if (data)
 	{
@@ -120,14 +123,11 @@ int main(int, char**)
 	{
 		std::cout << "Failed to load texture" << std::endl;
 	}
-	stbi_image_free(data);
 
 #pragma endregion
 
-
-
 	glfwSetMouseButtonCallback(window, mouse_button_callback);
-	 
+
 	//=========================================
 
 	// Main loop
@@ -155,54 +155,28 @@ int main(int, char**)
 		glActiveTexture(GL_TEXTURE0);
 		glUseProgram(0);
 
-		GL::Draw();
+		GL::Draw(lines);
 		ImGui_ImplGlfwGL2_NewFrame();
 		{
 			ImGui::InputText("Path", new_image_path, IM_ARRAYSIZE(new_image_path));
 			if (ImGui::Button("Load new image"))
-				LoadNewTexture(new_image_path);
-			ImGui::Text("---------------");
-			int i0_tmp = i0;
-			if (ImGui::InputInt("i0", &i0)) {
-				if (i0 < 1)
-					i0 = 1;
-				if (i0 > SCR_WIDTH)
-					i0 = SCR_WIDTH;
-				if (i0_tmp < i0)
-					while (SCR_WIDTH%i0 != 0)
-						i0++;
-				else
-					while (SCR_WIDTH%i0 != 0)
-						i0--;
-			}
-			ImGui::Text(("WIDTH: " + std::to_string(SCR_WIDTH)).c_str());
-			ImGui::Text(("pixels amount " + std::to_string(SCR_WIDTH / i0)).c_str());
-			ImGui::Text("---------------");
-			int i1_tmp = i1;
-			if (ImGui::InputInt("i1", &i1)) {
-				if (i1 < 1)
-					i1 = 1;
-				if (i1 > SCR_HEIGHT)
-					i1 = SCR_HEIGHT;
-				if (i1_tmp < i1)
-				{
-					while (SCR_HEIGHT%i1 != 0)
-						i1++;
-				}
-				else
-				{
-					while (SCR_HEIGHT%i1 != 0)
-						i1--;
-				}
-			}
-			ImGui::Text(("HEIGHT: " + std::to_string(SCR_HEIGHT)).c_str());
-			ImGui::Text(("pixels amount " + std::to_string(SCR_HEIGHT / i1)).c_str());
-			ImGui::Text("---------------");
-			if (ImGui::Button("Marching Squares")) 
 			{
-
+				stbi_image_free(data);
+				lines.clear();
+				LoadNewTexture(data, new_image_path);
 			}
-			
+			ImGui::Text("---------------");
+			if (ImGui::SliderInt("step", &step, 5, min(SCR_WIDTH, SCR_HEIGHT)))
+				lines = MarchingSquares(data);
+			ImGui::Text("---------------");
+			if (ImGui::SliderInt("threshhold", &threshhold, 0, 255))
+				lines = MarchingSquares(data);
+			ImGui::Text("---------------");
+			if (ImGui::Button("Marching Squares"))
+			{
+				lines = MarchingSquares(data);
+			}
+
 		}
 		ImGui::Render();
 
@@ -216,6 +190,7 @@ int main(int, char**)
 		glfwPollEvents();
 	}
 
+	stbi_image_free(data);
 	ImGui_ImplGlfwGL2_Shutdown();
 	glfwTerminate();
 	return 0;
@@ -235,12 +210,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
 }
 
-void LoadNewTexture(const char* src)
+void LoadNewTexture(unsigned char *data, const char* src)
 {
+
 	glBindTexture(GL_TEXTURE_2D, texture);
 
 	stbi_set_flip_vertically_on_load(true);
-	unsigned char *data = stbi_load(src, &SCR_WIDTH, &SCR_HEIGHT, &nrChannels, 0);
+	data = stbi_load(src, &SCR_WIDTH, &SCR_HEIGHT, &nrChannels, 0);
 	glfwSetWindowSize(window, SCR_WIDTH, SCR_HEIGHT);
 	if (data)
 	{
@@ -252,6 +228,103 @@ void LoadNewTexture(const char* src)
 		std::cout << "Failed to load texture" << std::endl;
 	}
 
-	stbi_image_free(data);
+}
 
+
+pair<Point, bool>** GetSamples(unsigned char* data)
+{
+	//if (step < 1 || threshhold < 0 || threshhold > 255)
+	//	throw new InvalidOperationException();
+	int h = (SCR_HEIGHT - 1) / step + 1;
+
+	pair<Point, bool>**  result = new pair<Point, bool>*[h];
+	for (size_t i = 0; i < h; i++)
+		result[i] = new pair<Point, bool>[(SCR_WIDTH - 1) / step + 1];
+
+	for (int i = 0; i * step < SCR_HEIGHT; i++)
+	{
+		for (int j = 0; j * step < SCR_WIDTH; j++)
+		{
+			//R==G==B
+			int colour = (data[i * step * 3 * SCR_WIDTH + j * step * 3] +
+				data[i * step * 3 * SCR_WIDTH + j * step * 3 + 1] +
+				data[i * step * 3 * SCR_WIDTH + j * step * 3 + 2]) / 3;
+			bool value = colour <= threshhold;
+			//bool value = false;
+			auto point = make_pair(Point(i * step, j * step), value);
+			result[i][j] = point;
+		}
+	}
+
+	return result;
+}
+
+Square** GetSquares(pair<Point, bool>** samples)
+{
+	// if (samples.GetLength(0) < 2 || samples.GetLength(1) < 2)
+	//	 throw new InvalidOperationException();
+
+
+	int w = (SCR_WIDTH - 1) / step + 1;
+	int h = (SCR_HEIGHT - 1) / step + 1;
+
+	Square** squares = new Square*[h];
+	for (size_t i = 0; i < h; i++)
+		squares[i] = new Square[w];
+
+	for (int i = 0; i < h - 1; i++)
+		for (int j = 0; j < w - 1; j++)
+		{
+			int value = 0;
+			if (samples[i][j].second) value += 8;
+			if (samples[i + 1][j].second) value += 4;
+			if (samples[i + 1][j + 1].second) value += 2;
+			if (samples[i][j + 1].second) value += 1;
+
+			squares[i][j] = Square(value, samples[i][j].first, samples[i + 1][j + 1].first);
+		}
+
+	/*for (size_t i = 0; i < h; i++)
+		delete[] samples[i];
+	delete[] samples;*/
+
+	return squares;
+}
+
+vector<Line> GetLines(Square**  squares)
+{
+	vector<Line> lines = vector<Line>();
+
+	int w = (SCR_WIDTH - 1) / step + 1;
+	int h = (SCR_HEIGHT - 1) / step + 1;
+
+	for (int i = 0; i < h - 1; i++)
+	{
+		for (size_t j = 0; j < w - 1; j++)
+		{
+			Square* square = &squares[i][j];
+			for (Line &line : (*square).GetLines())
+			{
+				int lineIndex = distance(lines.begin(), find(lines.begin(), lines.end(), line));
+				if (lineIndex >= lines.size())
+					lines.push_back(line);
+				else
+					lines.erase(lines.begin() + lineIndex);
+			}
+		}
+	}
+
+	/*for (size_t i = 0; i < h; i++)
+		delete[] squares[i];
+	delete[] squares;*/
+	return lines;
+}
+
+vector<Line> MarchingSquares(unsigned char * data)
+{
+	auto samples = GetSamples(data);
+	auto squares = GetSquares(samples);
+	auto lines = GetLines(squares);
+	//return vector<Line>();
+	return lines;
 }
