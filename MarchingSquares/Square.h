@@ -6,14 +6,10 @@
 using namespace std;
 class Square
 {
-public:
-	Square() {};
-	~Square() {};
-
 private:
-	Point _downRightCorner;
 	int _number;
-
+	
+	Point _downRightCorner;
 	Point TopLeft;
 	Point DownRight;
 	Point TopRight;
@@ -24,6 +20,9 @@ private:
 	Point RightMid;
 
 public:
+	Square() {};
+	~Square() {};
+
 	Square(int number, Point topLeftCorner, Point downRightCorner)
 	{
 		TopLeft = topLeftCorner;
@@ -42,21 +41,21 @@ public:
 	{
 		switch (_number)
 		{
-		case 1: return GetLines(vector<int>(1, 4));
-		case 2: return GetLines(vector<int>(1, 3));
-		case 3: return GetLines(vector<int>(1, 6));
-		case 4: return GetLines(vector<int>(1, 2));
-		case 5: return GetLines({ 1, 3 });
-		case 6: return GetLines(vector<int>(1, 5));
-		case 7: return GetLines(vector<int>(1, 1));
-		case 8: return GetLines(vector<int>(1, 1));
-		case 9: return GetLines(vector<int>(1, 5));
-		case 10: return GetLines({ 2, 4 });
-		case 11: return GetLines(vector<int>(1, 2));
-		case 12: return GetLines(vector<int>(1, 6));
-		case 13: return GetLines(vector<int>(1, 3));
-		case 14: return GetLines(vector<int>(1, 4));
-		default: return GetLines(vector<int>());
+			case 1: return GetLines(vector<int>(1, 4));
+			case 2: return GetLines(vector<int>(1, 3));
+			case 3: return GetLines(vector<int>(1, 6));
+			case 4: return GetLines(vector<int>(1, 2));
+			case 5: return GetLines({ 1, 3 });
+			case 6: return GetLines(vector<int>(1, 5));
+			case 7: return GetLines(vector<int>(1, 1));
+			case 8: return GetLines(vector<int>(1, 1));
+			case 9: return GetLines(vector<int>(1, 5));
+			case 10: return GetLines({ 2, 4 });
+			case 11: return GetLines(vector<int>(1, 2));
+			case 12: return GetLines(vector<int>(1, 6));
+			case 13: return GetLines(vector<int>(1, 3));
+			case 14: return GetLines(vector<int>(1, 4));
+			default: return GetLines(vector<int>());
 
 		}
 	}
@@ -66,9 +65,7 @@ private:
 	{
 		vector<Line> out = vector<Line>();
 		for (int nr : nrs)
-		{
 			out.push_back(GetLines(nr));
-		}
 		return out;
 	}
 
@@ -76,13 +73,13 @@ private:
 	{
 		switch (nr)
 		{
-		case 1: return Line(LeftMid, TopMid);
-		case 2: return Line(TopMid, RightMid);
-		case 3: return Line(RightMid, DownMid);
-		case 4: return Line(DownMid, LeftMid);
-		case 5: return Line(TopMid, DownMid);
-		case 6: return Line(LeftMid, RightMid);
-		default: throw;
+			case 1: return Line(LeftMid, TopMid);
+			case 2: return Line(TopMid, RightMid);
+			case 3: return Line(RightMid, DownMid);
+			case 4: return Line(DownMid, LeftMid);
+			case 5: return Line(TopMid, DownMid);
+			case 6: return Line(LeftMid, RightMid);
+			default: throw;
 		}
 	}
 };

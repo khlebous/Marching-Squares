@@ -8,15 +8,14 @@ public:
 	Line() {};
 	~Line() {};
 
-public:
+	Point A;
+	Point B;
+
 	Line(Point a, Point b)
 	{
 		A = a;
 		B = b;
 	}
-
-	Point A;
-	Point B;
 
 	bool operator==(const Line& l) const
 	{

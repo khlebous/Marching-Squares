@@ -2,47 +2,38 @@
 #include <GLFW/glfw3.h>
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <algorithm>
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-
-#include "shader.h"
 #include <iostream>
 #include <imgui\imgui.h>
-#include "imgui_impl_glfw.h"
 
-#include <stdio.h>
-#include <algorithm>
+#include "imgui_impl_glfw.h"
+#include "shader.h"
+
 #include "GraphicsLibrary.h"
 #include "MarchingSquares.h"
 #include "Point.h"
 #include "Square.h"
-
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
-
-void LoadNewTexture(unsigned char **data, const char* src, unsigned int* texture, int* nrChannels);
-
-using namespace std;
-
-char new_image_path[30] = "3.png";
 
 int SCR_WIDTH = 512;
 int SCR_HEIGHT = 512;
 int STEP = 20;
 int THRESHHOLD = 120;
 
-GLFWwindow* window;
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow *window);
 void error_callback(int error, const char* description);
+void LoadNewTexture(GLFWwindow *window, unsigned char **data, const char* src, unsigned int* texture, int* nrChannels);
 
-
+using namespace std;
 int main(int, char**)
 {
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
 		return 1;
 	glfwInit();
-	window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Marching Cubes", NULL, NULL);
+GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Marching Cubes", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -58,6 +49,10 @@ int main(int, char**)
 		return -1;
 	}
 	ImGui_ImplGlfwGL2_Init(window, true);
+	//=========================================
+	char new_image_path[30] = "source.png";
+	Shader ourShader("texture.vs", "texture.fs");
+	vector<Line> lines;
 	//=========================================
 	float vertices[] = {
 		// positions          // texture coords
@@ -91,10 +86,7 @@ int main(int, char**)
 	unsigned int texture;
 	int nrChannels;
 	unsigned char* data = nullptr;
-	LoadNewTexture(&data, new_image_path, &texture, &nrChannels);
-	//=========================================
-	Shader ourShader("texture.vs", "texture.fs");
-	vector<Line> lines;
+	LoadNewTexture(window, &data, new_image_path, &texture, &nrChannels);
 	//=========================================
 	while (!glfwWindowShouldClose(window))
 	{
@@ -128,7 +120,7 @@ int main(int, char**)
 			{
 				stbi_image_free(data);
 				lines.clear();
-				LoadNewTexture(&data, new_image_path, &texture, &nrChannels);
+				LoadNewTexture(window, &data, new_image_path, &texture, &nrChannels);
 			}
 			ImGui::Text("---------------");
 			if (ImGui::SliderInt("step", &STEP, 5, min(SCR_WIDTH, SCR_HEIGHT)))
@@ -175,8 +167,7 @@ void error_callback(int error, const char* description)
 	fprintf(stderr, "Error %d: %s\n", error, description);
 }
 
-
-void LoadNewTexture(unsigned char **data, const char* src, unsigned int* texture, int* nrChannels)
+void LoadNewTexture(GLFWwindow *window, unsigned char **data, const char* src, unsigned int* texture, int* nrChannels)
 {
 	glBindTexture(GL_TEXTURE_2D, *texture);
 
@@ -192,7 +183,6 @@ void LoadNewTexture(unsigned char **data, const char* src, unsigned int* texture
 	{
 		std::cout << "Failed to load texture" << std::endl;
 	}
-
 }
 
 

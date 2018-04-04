@@ -7,5 +7,4 @@ using namespace std;
 namespace GL
 {
 	void Draw(vector<Line> lines);
-	void Draw();
 }
